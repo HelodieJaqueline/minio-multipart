@@ -1,17 +1,25 @@
 package com.winterchen.minio.rest;
 
+import cn.hutool.http.HttpResponse;
 import com.winterchen.minio.request.CompleteMultipartUploadRequest;
 import com.winterchen.minio.request.MultipartUploadCreateRequest;
 import com.winterchen.minio.response.FileUploadResponse;
 import com.winterchen.minio.response.MultipartUploadCreateResponse;
 import com.winterchen.minio.service.FileUploadService;
-import io.swagger.annotations.*;
-import org.simpleframework.xml.Path;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiImplicitParams;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-
-import javax.servlet.http.HttpServletResponse;
 
 /**
  * @author winterchen
@@ -55,8 +63,6 @@ public class FileUploadController {
     }
 
 
-
-
     @ApiOperation("创建分片上传")
     @PostMapping("/multipart/create")
     public MultipartUploadCreateResponse createMultipartUpload(
@@ -65,6 +71,14 @@ public class FileUploadController {
                     MultipartUploadCreateRequest multipartUploadCreateRequest
     ) {
         return fileUploadService.createMultipartUpload(multipartUploadCreateRequest);
+    }
+
+    @PostMapping("/delegate/file")
+    public HttpResponse delegateFile(
+            @RequestParam(value = "file", required = true)
+            MultipartFile file,
+            String url) {
+        return fileUploadService.delegateFile(file,url);
     }
 
     @ApiOperation("合并分片")

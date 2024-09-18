@@ -1,8 +1,8 @@
 package com.winterchen.minio.service;
 
-import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.lang.Assert;
-
+import cn.hutool.http.HttpRequest;
+import cn.hutool.http.HttpResponse;
 import com.winterchen.minio.base.MultipartUploadCreate;
 import com.winterchen.minio.base.ResultCode;
 import com.winterchen.minio.exception.BusinessException;
@@ -19,15 +19,11 @@ import io.minio.errors.ServerException;
 import io.minio.messages.Part;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.tomcat.jni.FileInfo;
-
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.management.Query;
-import javax.servlet.http.HttpServletResponse;
+import java.io.File;
 import java.io.IOException;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
@@ -128,6 +124,7 @@ public class FileUploadService {
                     .uploadId(uploadRequest.getUploadId())
                     .partNumberMarker(0)
                     .build());
+            System.out.println(listMultipart.result().partList());
             final ObjectWriteResponse objectWriteResponse = minioHelper.completeMultipartUpload(MultipartUploadCreate.builder()
                     .bucketName(minioHelper.minioProperties.getBucketName())
                     .uploadId(uploadRequest.getUploadId())
@@ -155,5 +152,29 @@ public class FileUploadService {
             log.error("删除文件失败", e);
         }
         log.info("删除文件结束, fileName: [{}]",fileName);
+    }
+
+    public HttpResponse delegateFile(MultipartFile multipartFile, String url) {
+        File file = convertMultipartFileToFile(multipartFile);
+        Map<String, Object> paramMap = new HashMap<>();
+        paramMap.put("file", file);
+        HttpResponse response = HttpRequest.put(url)
+                .form(paramMap)
+                .setFollowRedirects(true)
+                .execute();
+        log.info("delegateFile response:{}", response);
+        return response;
+    }
+
+    private File convertMultipartFileToFile(MultipartFile multipartFile) {
+        try {
+            // 创建临时文件
+            File tempFile = File.createTempFile("test_chunk_upload_", multipartFile.getOriginalFilename());
+            multipartFile.transferTo(tempFile);
+            return tempFile;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 }

@@ -70,12 +70,26 @@ uploadFile = async () => {
                     let end = Math.min(fileSize, start + chunkSize)
                     //取文件指定范围内的byte，从而得到分片数据
                     let _chunkFile = file.slice(start, end)
-                    console.log("开始上传第" + item.partNumber + "个分片")
-                    await $.ajax({url: item.uploadUrl, type: 'PUT', contentType: false, processData: false, data: _chunkFile,
+                    console.log("开始上传第" + item.partNumber + "个分片,url:" + item.uploadUrl)
+
+                    let delegateFormData = new FormData();
+                    delegateFormData.append("url", item.uploadUrl)
+                    delegateFormData.append("file",_chunkFile);
+                    await $.ajax({
+                        async: false,
+                        url:  "http://127.0.0.1:8080/file/delegate/file", type: 'POST', contentType: false, processData: false, data: delegateFormData,
+                        success: function (res) {
+                            console.log(res);
+                            console.log("第" + item.partNumber + "个分片通过后端上传完成")
+                        }
+                    })
+
+
+/*                    await $.ajax({url: item.uploadUrl, type: 'PUT', contentType: false, processData: false, data: _chunkFile,
                         success: function (res) {
                             console.log("第" + item.partNumber + "个分片上传完成")
                         }
-                    })
+                    })*/
                 }
                 //请求后端合并文件
                 composeFile(res.data.uploadId,file.name, chunkCount, fileSize, file.contentType)
